@@ -2,7 +2,7 @@ from Matrix import Matrix
 from Function import Function
 
 
-def parse_file(filename: str):
+def parse_file(filename: str) -> (Function, Matrix, list[float], int | float):
     with open(filename) as file:
         function = Function(list(map(float, file.readline().split())))
         file.readline()
@@ -21,7 +21,7 @@ def parse_file(filename: str):
         return function, m, b, approximation
 
 
-def parse_test(filename: str):
+def parse_test(filename: str) -> (Function, Matrix, list[float], int | float, list[float], int | float):
     """
     Parse test file with optimal value and optimal vector
     """

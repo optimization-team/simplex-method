@@ -76,6 +76,9 @@ class Simplex:
         function = Function(list(self.function.coefficients))
         b = self.b
         matrix = self.matrix
+        # change sign of function coefficients,
+        # because linprog solves the minimization problem
+        function.coefficients = [-el for el in function.coefficients]
         opt = linprog(
             c=function.coefficients,
             A_ub=matrix.data,
@@ -85,7 +88,7 @@ class Simplex:
             bounds=[(0, float("inf")) for _ in range(len(function))],
             method="highs"
         )
-        return opt.fun, opt.x
+        return -opt.fun, opt.x
 
 
 if __name__ == '__main__':
@@ -94,3 +97,4 @@ if __name__ == '__main__':
     s = Simplex(*parse_file('inputs/input1.txt'))
 
     s.optimise()
+
