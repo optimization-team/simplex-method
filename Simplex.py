@@ -1,6 +1,7 @@
 from Matrix import Matrix
 from Function import Function
 import termtables as tt
+from scipy.optimize import linprog
 
 
 class Simplex:
@@ -29,6 +30,10 @@ class Simplex:
     ----------
     show_table(function, basic, b, matrix, delta_row)
         draws a table with given data in console
+
+    plug_optimize()
+        plug method for autotests
+        Returns optimal value and optimal vector
 
     """
 
@@ -67,10 +72,25 @@ class Simplex:
         print(function)
         print(view)
 
+    def plug_optimize(self) -> (int | float, list[int | float]):
+        function = Function(list(self.function.coefficients))
+        b = self.b
+        matrix = self.matrix
+        opt = linprog(
+            c=function.coefficients,
+            A_ub=matrix.data,
+            b_ub=b,
+            A_eq=None,
+            b_eq=None,
+            bounds=[(0, float("inf")) for _ in range(len(function))],
+            method="highs"
+        )
+        return opt.fun, opt.x
+
 
 if __name__ == '__main__':
     from parser import parse_file
 
-    s = Simplex(*parse_file('tests/test1.txt'))
+    s = Simplex(*parse_file('inputs/input1.txt'))
 
     s.optimise()
