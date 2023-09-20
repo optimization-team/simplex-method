@@ -20,6 +20,7 @@ class SimplexTestCase:
     opt: int | float
         optimal function value
     """
+
     def __init__(self, function: Function, matrix: Matrix, b: Matrix, approximation: int | float,
                  x: list[float], opt: int | float):
         self.simplex = Simplex(function, matrix, b, approximation)
@@ -48,10 +49,9 @@ class TestSimplex:
 
     @pytest.mark.parametrize("test_file", test_cases)
     def test_simplex(self, test_file):
-        # f, m, b, a, x_check, opt_check = parse_test(test_file)
-        # simplex = Simplex(f, m, b, a)
         testcase = SimplexTestCase(*parse_test(test_file))
 
+        # opt, x = testcase.simplex.optimize()
         opt, x = testcase.simplex.plug_optimize()
 
         for i in range(len(x)):

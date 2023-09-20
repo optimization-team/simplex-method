@@ -97,4 +97,3 @@ if __name__ == '__main__':
     s = Simplex(*parse_file('inputs/input1.txt'))
 
     s.optimise()
-
