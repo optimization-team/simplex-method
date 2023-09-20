@@ -46,8 +46,8 @@ class Simplex:
         matrix = self.matrix
 
         for i in range(self.matrix.rows):
-            col = [0] * matrix.rows
-            col[i] = 1
+            col = [0.0] * matrix.rows
+            col[i] = 1.0
             matrix.add_col(col)
 
         ci = Function([function[basic[i]] for i in range(len(basic))])
