@@ -27,6 +27,14 @@ class SimplexTestCase:
         self.x = x
         self.opt = opt
 
+    def __str__(self):
+        return f'TestCase:\n{self.simplex.function},\n' \
+               f'A:\n{self.simplex.matrix},\n' \
+               f'b: {self.simplex.b},\n' \
+               f'accuracy: {self.simplex.approximation},\n' \
+               f'Vector of decision variables: ({", ".join(map(str, self.x))}),\n' \
+               f'Optimal value of objection function: {self.opt}'
+
 
 class TestSimplex:
     """
@@ -59,3 +67,5 @@ class TestSimplex:
                    round(testcase.x[i], testcase.simplex.approximation)
 
         assert opt == testcase.opt
+
+
