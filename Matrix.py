@@ -42,6 +42,25 @@ class Matrix:
         self.data.append(row)
         self.rows += 1
 
+    def add_col(self, col: list[float | int]) -> None:
+        """
+        Adds a col to the right of a matrix
+
+        :param col: col to be added
+        :return: None
+        """
+        if not isinstance(col, list):
+            raise ValueError("Undefined behaviour")
+        if len(col) != self.rows:
+            raise ValueError("Wrong length of the row")
+        for row in range(self.rows):
+            self.data[row].append(col[row])
+        self.cols += 1
+
+    def get_cols(self):
+        cols = [[self.data[j][i] for j in range(self.rows)] for i in range(self.cols)]
+        return cols
+
     def __str__(self) -> str:
         return '[' + '\n'.join(['[' + '\t'.join(map(str, row)) + ']' for row in self.data]) + ']'
 
@@ -150,3 +169,5 @@ if __name__ == '__main__':
     b[2] = [5, 6]
 
     print(a * b)
+
+    print(a.get_cols())

@@ -56,6 +56,9 @@ class Function:
     def __len__(self):
         return len(self.coefficients)
 
+    def __getitem__(self, item: int):
+        return self.coefficients[item]
+
 
 if __name__ == '__main__':
     f = Function(1, 2, 3)  # also possible Function((1, 2, 3)) and Function([1, 2, 3])
