@@ -1,10 +1,42 @@
 class Function:
-    def __init__(self, coefficients):
-        self.coefficients = coefficients
+    """
+    Function class
 
-    def __call__(self, *args, vector):
+    Attributes
+    ----------
+    coefficients: list[int | float]
+        list of coefficients of a function
+
+    Methods
+    ----------
+    __init__(*args, coefficients):
+        Takes as an argument list of values (vector) or a sequence of numbers, not both.
+
+    __call__(*args, vector) -> float | int:
+        Takes as an argument list of values (vector) or a sequence of numbers, not both.
+        Then returns a dot product of coefficients and a given data.
+
+        To more information see examples.
+    """
+
+    def __init__(self, *args, coefficients: list[int | float] = None):
+        if args and coefficients:
+            raise ValueError("Pass vector or list of values, not both")
+
+        if len(args) == 1 and (isinstance(args[0], list) or isinstance(args[0], tuple)):
+            args = tuple(args[0])
+
+        if coefficients:
+            args = tuple(coefficients)
+
+        self.coefficients = args
+
+    def __call__(self, *args, vector=None) -> int | float:
         if args and vector:
             raise ValueError("Pass vector or list of values, not both")
+
+        if len(args) == 1 and (isinstance(args[0], list) or isinstance(args[0], tuple)):
+            args = tuple(args[0])
 
         if vector:
             args = tuple(vector)
@@ -23,3 +55,9 @@ class Function:
 
     def __len__(self):
         return len(self.coefficients)
+
+
+if __name__ == '__main__':
+    f = Function(1, 2, 3)  # also possible Function((1, 2, 3)) and Function([1, 2, 3])
+    res = f(3, 2, 1)  # also possible f((3, 2, 1)) and f([3, 2, 1])
+    print(res)

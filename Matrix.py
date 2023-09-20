@@ -1,10 +1,40 @@
 class Matrix:
+    """
+    Matrix class
+
+    Attributes
+    ----------
+    rows: int
+        number of rows
+    cols: int
+        number of columns
+    data: list[list[int]]
+        matrix data itself
+
+    Methods
+    ----------
+    add_row(row: list[float|int])
+        Adds a new row passed as an argument to a matrix
+    """
+
     def __init__(self, rows, cols):
+        """
+        Constructor
+
+        :param rows: initial number of rows in a matrix
+        :param cols: initial number of columns in a matrix
+        """
         self.rows = rows
         self.cols = cols
         self.data = [[0 for _ in range(cols)] for __ in range(rows)]
 
-    def add_row(self, row: list[float | int]):
+    def add_row(self, row: list[float | int]) -> None:
+        """
+        Adds a row to the bottom of a matrix
+
+        :param row: row to be added
+        :return: None
+        """
         if not isinstance(row, list):
             raise ValueError("Undefined behaviour")
         if len(row) != self.cols:
@@ -12,16 +42,16 @@ class Matrix:
         self.data.append(row)
         self.rows += 1
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '[' + '\n'.join(['[' + '\t'.join(map(str, row)) + ']' for row in self.data]) + ']'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> list[float | int]:
         return self.data[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(value, Matrix):
             if value.rows == self.rows and value.cols == self.cols:
                 self.data[key] = value.data
@@ -108,6 +138,8 @@ class Matrix:
 
 
 if __name__ == '__main__':
+    help(Matrix)
+
     a = Matrix(2, 3)
     a[0] = [1, 2, 3]
     a[1] = [4, 5, 6]
