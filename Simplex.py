@@ -92,8 +92,13 @@ class Simplex:
 
 
 if __name__ == '__main__':
-    from parser import parse_file
+    from parser import parse_file, parse_test
 
-    s = Simplex(*parse_file('inputs/input1.txt'))
+    s = Simplex(*parse_file('tests/test5.txt'))
 
-    s.optimise()
+    # s.optimise()
+    opt, x = s.plug_optimize()
+    print(opt, x)
+
+
+
