@@ -59,8 +59,14 @@ class Function:
     def __getitem__(self, item: int):
         return self.coefficients[item]
 
+    def invert_sign(self):
+        self.coefficients = [-c for c in self.coefficients]
+
 
 if __name__ == '__main__':
     f = Function(1, 2, 3)  # also possible Function((1, 2, 3)) and Function([1, 2, 3])
     res = f(3, 2, 1)  # also possible f((3, 2, 1)) and f([3, 2, 1])
+    print(res)
+    f.invert_sign()
+    res = f(3,2,1)
     print(res)
