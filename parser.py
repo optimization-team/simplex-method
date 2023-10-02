@@ -1,5 +1,6 @@
 from Matrix import Matrix
 from Function import Function
+from numpy import matrix
 
 
 def parse_file(filename: str):
@@ -7,11 +8,12 @@ def parse_file(filename: str):
         function = Function(list(map(float, file.readline().split())))
         file.readline()
 
-        m = Matrix(rows=0, cols=len(function))
+        m = list()
         constraint = file.readline()
         while constraint != '\n':
-            m.add_row(list(map(float, constraint.split())))
+            m.append(list(map(float, constraint.split())))
             constraint = file.readline()
+        m = matrix(m)
 
         b = list(map(float, file.readline().split()))
         file.readline()
