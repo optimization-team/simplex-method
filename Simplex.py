@@ -1,8 +1,8 @@
-from Matrix import Matrix
 from Function import Function
 import termtables as tt
 from scipy.optimize import linprog
 
+import numpy as np
 
 class Simplex:
     """
@@ -37,40 +37,54 @@ class Simplex:
 
     """
 
-    def __init__(self, function: Function, matrix: Matrix, b: Matrix, approximation: int | float,
-                 to_maximise: bool = True):
+    def __init__(self, function: Function, A: np.array, b: np.array, approximation: int | float,
+                 to_minimize: bool = True):
+        np.set_printoptions(approximation)
+
+        # constants
         self.function = function
-        self.matrix = matrix
+        self.A = A
         self.b = b
-        self.approximation = approximation
+        self.to_minimize = to_minimize
+        n, m = np.size(self.A)  # number of vars and number of constraints
 
-    def optimise(self):
-        function = Function(list(self.function.coefficients) + [0] * self.matrix.rows)
-        basic = [len(self.function) + i for i in range(self.matrix.rows)]
-        b = self.b
-        matrix = self.matrix
+        # variables
+        self.x = np.zeros((n,1)) # current solution, where x_B = [x[i] for i in basic_indices]
+        self.basic_indices = [i for i in range(n-m+1,n+1)] # each index is in range 1,...,n
+        self.B = np.identity(len(self.b))
+        self.c_B = np.zeros((1, len(self.basic_indices))) # basic var coefs
+        self.c = self.function.coefficients # nonbasic var coefs
 
-        for i in range(self.matrix.rows):
-            col = [0.0] * matrix.rows
-            col[i] = 1.0
-            matrix.add_col(col)
+        # min or max?
+        if to_minimize:
+            self.function.invert_sign()
 
-        ci = Function([function[basic[i]] for i in range(len(basic))])
-        delta_row = ['-', 'delta', ci(b)] + [ci(col) - function[i] for i, col in enumerate(matrix.get_cols())]
+    def is_optimal(self, B_inv) -> bool:
+        # optimal if z-c >= 0
+        # z = c_B * B_inv * A' ,
+        # where A' - all nonbasic cols of A
+        pass
 
-        self.show_table(function, basic, b, matrix, delta_row)
+    def compute_basic_solution(self, B_inv) -> None:
+        x_B = np.dot(B_inv, self.b)
+        for i in range(len(self.basic_indices)):
+            self.x[self.basic_indices[i]-1] = x_B[i-1]
 
-    def show_table(self, function, basic, b, matrix, delta_row):
-        data = [[function[basic[row]], basic[row], b[row], *[el for el in matrix[row]]] for row in
-                range(matrix.rows)] + [delta_row]
+    def update_basis(self) -> None:
+        # determines the leaving and entering vars and updates the fields: basic_indices, B, c, and c_B
+        pass
 
-        view = tt.to_string(
-            data,
-            header=['c', 'basic', 'b'] + [f'x{i}' for i in range(len(function))],
-            style=tt.styles.rounded_thick
-        )
-        print(function)
-        print(view)
+    def optimise(self) -> None:
+        self.compute_basic_solution(self.B)
+        B_inv = self.B
+        while not self.is_optimal(B_inv):
+            self.update_basis()
+            self.compute_basic_solution(np.invert(self.B))
+
+        if self.to_minimize:
+            print("The min value is achieved at " + str(self.x) + ", and it is " + str(-self.function(self.x)))
+        else:
+            print("The max value is achieved at "+str(self.x)+", and it is "+str(self.function(self.x)))
 
     def plug_optimize(self) -> (int | float, list[int | float]):
         function = Function(list(self.function.coefficients))
@@ -92,13 +106,8 @@ class Simplex:
 
 
 if __name__ == '__main__':
-    from parser import parse_file, parse_test
+    from parser import parse_file
 
-    s = Simplex(*parse_file('tests/test5.txt'))
+    s = Simplex(*parse_file('tests/test1.txt'))
 
-    # s.optimise()
-    opt, x = s.plug_optimize()
-    print(opt, x)
-
-
-
+    s.optimise()
