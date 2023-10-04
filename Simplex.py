@@ -1,8 +1,16 @@
+from enum import Enum
+
 from Function import Function
 import termtables as tt
 from scipy.optimize import linprog
 
 import numpy as np
+
+
+class Solution(Exception):
+    def __init__(self, X, z):
+        self.X = X
+        self.z = z
 
 
 class Simplex:
@@ -72,8 +80,57 @@ class Simplex:
             self.x[self.basic_indices[i] - 1] = x_B[i - 1]
 
     def update_basis(self) -> None:
-        # determines the leaving and entering vars and updates the fields: basic_indices, B, c, and c_B
-        pass
+
+        class MinMax(Enum):
+            MIN = 1
+            MAX = 2
+
+            @staticmethod
+            def from_to_minimize():
+                if self.to_minimize:
+                    return MinMax.MIN
+                else:
+                    return MinMax.MAX
+
+        def get_non_basis(A, basis):
+            variables = np.arange(len(A[0]))
+            mask = np.ones(variables.size, dtype=bool)
+            mask[basis] = False
+            return variables[mask]
+
+        # basis is number of
+        def new_basis(B, A, b, basis, C, C_basis, minMax):
+            Xb = np.matmul(np.linalg.inv(B), b)
+            non_basis = get_non_basis(A, basis)
+            optimality = np.matmul(np.matmul(C_basis, np.linalg.inv(B)), A[:, non_basis]) - C[non_basis]
+            if minMax == MinMax.MIN:
+                if (optimality <= 0).all():
+                    raise Solution(X=Xb, z=np.matmul(C_basis, Xb))
+                entering_vec_pos = non_basis[np.where(optimality == np.max(optimality))[0][0]]
+            elif minMax == MinMax.MAX:
+                if (optimality >= 0).all():
+                    raise Solution(X=Xb, z=np.matmul(C_basis, Xb))
+                entering_vec_pos = non_basis[np.where(optimality == np.min(optimality))[0][0]]
+            entering_vec = np.matmul(np.linalg.inv(B), A[:, entering_vec_pos])
+            if (entering_vec <= 0).all():
+                raise Exception("Unbounded solution")
+            np.seterr(divide='ignore')
+            feasibility = np.divide(Xb, entering_vec)
+            feasibility = feasibility[feasibility != np.inf]
+            feasibility = feasibility[feasibility > 0]
+            if (feasibility <= 0).all():
+                raise Exception("Infeasible")
+            leaving_var = np.where(feasibility == np.min(feasibility))[0][0]
+            B[:, leaving_var] = entering_vec
+            basis[leaving_var] = entering_vec_pos
+            C_basis[leaving_var] = C[entering_vec_pos]
+            return B, basis, C_basis
+
+        (B, basis, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
+                                        MinMax.from_to_minimize())
+        self.B = B
+        self.basic_indices = basis
+        self.c_B = C_basis
 
     def optimise(self) -> None:
         self.compute_basic_solution(self.B)
