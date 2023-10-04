@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from Function import Function
 import termtables as tt
 from scipy.optimize import linprog
@@ -71,8 +73,42 @@ class Simplex:
         for i in range(len(self.basic_indices)):
             self.x[self.basic_indices[i] - 1] = x_B[i - 1]
 
+
     def update_basis(self) -> None:
         # determines the leaving and entering vars and updates the fields: basic_indices, B, c, and c_B
+        B_inv = np.linalg.inv(self.B)  # Step 1: Compute the inverse of the basis B
+
+        # Step 2: Calculate z - c for non-basic variables
+        z_minus_c = np.dot(self.c_B, np.dot(B_inv, self.A) - self.c)
+
+        if all(z_minus_c >= 0):  # If z - c >= 0 for all non-basic vectors, we have reached the optimal solution
+            return
+
+        entering_var_index = np.argmin(z_minus_c)  # Find entering vector
+
+        A_i = np.dot(B_inv, self.A[:, entering_var_index])  # Step 3: Compute B_inv * A_i
+
+        # Step 3 (continued): Determine the leaving vector using the ratio test
+        ratios = np.divide(self.x[self.basic_indices - 1], A_i)
+        ratios[A_i <= 0] = np.inf  # Ignore negative or zero elements in A_i
+        leaving_var_index = np.argmin(ratios)
+
+        # Step 4: Update the basis
+        leaving_var = self.basic_indices[leaving_var_index]
+        self.basic_indices[leaving_var_index] = entering_var_index + 1
+
+        E = np.eye(len(self.b))
+        E[:, leaving_var_index] = -A_i / A_i[leaving_var_index]
+        self.B = np.dot(E, self.B)
+
+        # Update c_B and c
+        self.c_B = self.function.coefficients[self.basic_indices - 1]
+        self.c = self.function.coefficients
+        self.c[self.basic_indices - 1] = 0
+
+        # Update x
+        self.x[leaving_var - 1] = 0
+
         pass
 
     def optimise(self) -> None:
