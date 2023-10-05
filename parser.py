@@ -1,4 +1,14 @@
+"""
+Parser for input files and test files.
+Parses files into arguments for Simplex and SimplexTestCase classes.
+
+See Also:
+    Simplex from Simplex.py
+    SimplexTestCase from test_simplex.py
+"""
+
 from Function import Function
+
 from numpy import matrix, array
 
 
@@ -25,6 +35,11 @@ def parse_file(filename: str):
 def parse_test(filename: str):
     """
     Parse test file with optimal value and optimal vector
+
+    Parameters
+    ----------
+    filename: str
+        name of the file to parse
     """
     # parse file + parse a vector of optimal values and optimal function value after -----
     with open(filename) as file:
@@ -43,7 +58,8 @@ def parse_test(filename: str):
 
         approximation = int(file.readline().strip())
 
-        for _ in range(3): file.readline()
+        for _ in range(3):
+            file.readline()
 
         fun = float(file.readline().strip())
         file.readline()

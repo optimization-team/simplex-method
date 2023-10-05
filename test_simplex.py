@@ -1,7 +1,6 @@
 """
 Tests can be run with command: pytest
-Tests are located in tests folder
-
+Test cases are located in "tests" folder.
 """
 import os
 import pytest

@@ -1,3 +1,9 @@
+"""
+Module for Function class.
+Function class is used to store a linear function by given coefficients.
+"""
+
+
 class Function:
     """
     Function class

@@ -1,5 +1,7 @@
+"""
+Module for solving maximization and minimization problems using simplex method.
+"""
 from enum import Enum
-
 from Function import Function
 import termtables as tt
 from scipy.optimize import linprog
@@ -42,7 +44,6 @@ class Simplex:
 
     plug_optimize()
         plug method for autotests
-        Returns optimal value and optimal vector
 
     """
 
@@ -145,6 +146,14 @@ class Simplex:
             print("The max value is achieved at " + str(self.x) + ", and it is " + str(self.function(self.x)))
 
     def plug_optimize(self) -> (int | float, list[int | float]):
+        """
+        Plug method for autotests
+        Returns
+        -------
+        (int | float, list[int | float])
+            optimal value and optimal vector
+
+        """
         function = Function(list(self.function.coefficients))
         b = self.b
         matrix = self.A
