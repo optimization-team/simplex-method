@@ -1,10 +1,12 @@
-# run from cmd with: pytest
-import pytest
+"""
+Testing Simplex class
+"""
 import os
+import pytest
+from numpy import matrix, array
 from Simplex import Simplex
 from Function import Function
 from parser import parse_test
-from numpy import matrix, array
 
 
 class SimplexTestCase:
@@ -14,7 +16,7 @@ class SimplexTestCase:
     Attributes
     ----------
     simplex: Simplex
-        Simplex object
+        Simplex-method object
     x: list[float]
         list of optimal values
     opt: int | float
@@ -58,13 +60,26 @@ class TestSimplex:
 
     @pytest.mark.parametrize("test_file", test_cases)
     def test_simplex(self, test_file):
+        """
+        test the Simplex method with various test cases
+
+        Parameters
+        ----------
+        test_file : str
+            path to test file
+
+        Returns
+        -------
+        None
+
+        """
         testcase = SimplexTestCase(*parse_test(test_file))
 
         # opt, x = testcase.simplex.optimize()
         opt, x = testcase.simplex.plug_optimize()
 
-        for i in range(len(x)):
-            assert round(x[i], testcase.approximation) == \
+        for i, val in enumerate(x):
+            assert round(val, testcase.approximation) == \
                    round(testcase.x[i], testcase.approximation)
 
         assert opt == testcase.opt
