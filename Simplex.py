@@ -10,6 +10,7 @@ import numpy as np
 
 
 class Solution(Exception):
+    """Custom exception class for the Simplex algorithm. Contains solution for an optimization problem."""
     def __init__(self, X, z):
         self.X = X
         self.z = z
@@ -44,6 +45,17 @@ class Simplex:
 
     plug_optimize()
         plug method for autotests
+
+    update_basis()
+        method for updating the basis matrix B, basis indices, and coefficients.
+
+        get_non_basis()
+            returns non-basis vectors of A matrix
+
+        new_basis()
+            returns updated basis matrix B, basis indices and coefficients
+
+        Returns nothing
 
     """
 
@@ -81,7 +93,6 @@ class Simplex:
             self.x[self.basic_indices[i] - 1] = x_B[i - 1]
 
     def update_basis(self) -> None:
-
         class MinMax(Enum):
             MIN = 1
             MAX = 2
@@ -93,16 +104,15 @@ class Simplex:
                 else:
                     return MinMax.MAX
 
-        def get_non_basis(A, basis):
+        def get_non_basis(A, basis_indices):
             variables = np.arange(len(A[0]))
             mask = np.ones(variables.size, dtype=bool)
-            mask[basis] = False
+            mask[basis_indices] = False
             return variables[mask]
 
-        # basis is number of
-        def new_basis(B, A, b, basis, C, C_basis, minMax):
+        def new_basis(B, A, b, basis_indices, C, C_basis, minMax):
             Xb = np.matmul(np.linalg.inv(B), b)
-            non_basis = get_non_basis(A, basis)
+            non_basis = get_non_basis(A, basis_indices)
             optimality = np.matmul(np.matmul(C_basis, np.linalg.inv(B)), A[:, non_basis]) - C[non_basis]
             if minMax == MinMax.MIN:
                 if (optimality <= 0).all():
@@ -123,14 +133,14 @@ class Simplex:
                 raise Exception("Infeasible")
             leaving_var = np.where(feasibility == np.min(feasibility))[0][0]
             B[:, leaving_var] = entering_vec
-            basis[leaving_var] = entering_vec_pos
+            basis_indices[leaving_var] = entering_vec_pos
             C_basis[leaving_var] = C[entering_vec_pos]
-            return B, basis, C_basis
+            return B, basis_indices, C_basis
 
-        (B, basis, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
+        (B, basis_indices, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
                                         MinMax.from_to_minimize())
         self.B = B
-        self.basic_indices = basis
+        self.basic_indices = basis_indices
         self.c_B = C_basis
 
     def optimise(self) -> None:
