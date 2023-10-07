@@ -1,6 +1,8 @@
 """
 Module for solving maximization and minimization problems using simplex method.
 """
+from __future__ import annotations
+
 from enum import Enum
 from Function import Function
 import termtables as tt
@@ -10,7 +12,6 @@ import numpy as np
 
 
 class Solution(Exception):
-    """Custom exception class for the Simplex algorithm. Contains solution for an optimization problem."""
     def __init__(self, X, z):
         self.X = X
         self.z = z
@@ -46,17 +47,6 @@ class Simplex:
     plug_optimize()
         plug method for autotests
 
-    update_basis()
-        method for updating the basis matrix B, basis indices, and coefficients.
-
-        get_non_basis()
-            returns non-basis vectors of A matrix
-
-        new_basis()
-            returns updated basis matrix B, basis indices and coefficients
-
-        Returns nothing
-
     """
 
     def __init__(self, function: Function, A: np.array, b: np.array, approximation: int,
@@ -81,18 +71,13 @@ class Simplex:
         if to_minimize:
             self.function.invert_sign()
 
-    def is_optimal(self, B_inv) -> bool:
-        # optimal if z-c >= 0
-        # z = c_B * B_inv * A' ,
-        # where A' - all nonbasic cols of A
-        pass
-
     def compute_basic_solution(self, B_inv) -> None:
         x_B = np.dot(B_inv, self.b)
         for i in range(len(self.basic_indices)):
             self.x[self.basic_indices[i] - 1] = x_B[i - 1]
 
     def update_basis(self) -> None:
+
         class MinMax(Enum):
             MIN = 1
             MAX = 2
@@ -104,15 +89,30 @@ class Simplex:
                 else:
                     return MinMax.MAX
 
-        def get_non_basis(A, basis_indices):
+        def get_non_basis(A, basis):
             variables = np.arange(len(A[0]))
             mask = np.ones(variables.size, dtype=bool)
-            mask[basis_indices] = False
+            mask[basis] = False
             return variables[mask]
 
-        def new_basis(B, A, b, basis_indices, C, C_basis, minMax):
+        def is_optimal(self, B_inv) -> bool:
+            # optimal if z-c >= 0
+            # z = c_B * B_inv * A' ,
+            difference = self.c_B @ B_inv @ get_non_basis(self.A, self.basic_indices) - self.c
+            if self.to_minimize:
+                for i in difference:
+                    if i > 0:
+                        return False
+            else:
+                for i in difference:
+                    if i < 0:
+                        return False
+            return True
+
+        # basis is number of
+        def new_basis(B, A, b, basis, C, C_basis, minMax):
             Xb = np.matmul(np.linalg.inv(B), b)
-            non_basis = get_non_basis(A, basis_indices)
+            non_basis = get_non_basis(A, basis)
             optimality = np.matmul(np.matmul(C_basis, np.linalg.inv(B)), A[:, non_basis]) - C[non_basis]
             if minMax == MinMax.MIN:
                 if (optimality <= 0).all():
@@ -133,14 +133,14 @@ class Simplex:
                 raise Exception("Infeasible")
             leaving_var = np.where(feasibility == np.min(feasibility))[0][0]
             B[:, leaving_var] = entering_vec
-            basis_indices[leaving_var] = entering_vec_pos
+            basis[leaving_var] = entering_vec_pos
             C_basis[leaving_var] = C[entering_vec_pos]
-            return B, basis_indices, C_basis
+            return B, basis, C_basis
 
-        (B, basis_indices, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
+        (B, basis, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
                                         MinMax.from_to_minimize())
         self.B = B
-        self.basic_indices = basis_indices
+        self.basic_indices = basis
         self.c_B = C_basis
 
     def optimise(self) -> None:
@@ -183,7 +183,7 @@ class Simplex:
 
 
 if __name__ == '__main__':
-    from parser import parse_file, parse_test
+    from input_parser import parse_file, parse_test
 
     s = Simplex(*parse_file('inputs/input2.txt'))
 
