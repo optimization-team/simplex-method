@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     s = Simplex(*parse_file('inputs/input2.txt'))
 
-    opt, x = s.plug_optimize()
+    opt, x = s.optimise()
 
     print(opt)
     print(x)
