@@ -47,7 +47,6 @@ class Function:
 
         if vector:
             args = tuple(vector)
-
         if len(args) != len(self.coefficients):
             raise ValueError("Input size does not match the size of the function")
 
