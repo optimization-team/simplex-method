@@ -12,6 +12,7 @@ import numpy as np
 
 
 class Solution(Exception):
+    """Custom exception class for the Simplex algorithm. Contains solution for an optimization problem."""
     def __init__(self, X, z):
         self.X = X
         self.z = z
@@ -46,6 +47,14 @@ class Simplex:
 
     plug_optimize()
         plug method for autotests
+
+    update_basis()
+        method for updating the basis matrix B, basis indices, and coefficients.
+        get_non_basis()
+            returns non-basis vectors of A matrix
+        new_basis()
+            returns updated basis matrix B, basis indices and coefficients
+        Returns nothing
 
     """
 
