@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 
 import numpy as np
-# import numpy.typing as npt
 import termtables as tt
 
 
 @dataclass
 class SimplexSolution:
-    """Stores a solution to simplex method.
-
-    Args:
-        decision_variables (npt.NDArray[np.double]): Vector of decision variables
-        value (float): Solution to maximization problem
     """
+    Custom exception class for the Simplex algorithm. Contains solution for an optimization problem.
 
+    Attributes
+    ----------
+    x: np.array
+    opt: float
+    """
     x: np.array
     opt: float
 
@@ -178,7 +178,7 @@ def main():
     from input_parser import parse_file, parse_test
     from numpy import array, matrix
 
-    function, A, b, approximation = parse_file('inputs/input5.txt')
+    function, A, b, approximation = parse_file('inputs/input2.txt')
     simplex = Simplex(array(function.coefficients), A, array(b), approximation)
     np.set_printoptions(precision=approximation)
 
