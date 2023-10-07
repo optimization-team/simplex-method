@@ -133,7 +133,7 @@ class Simplex:
         self.basic_indices = basis
         self.c_B = C_basis
 
-    def optimise(self) -> None:
+    def optimise(self):
         self.compute_basic_solution(self.B)
         B_inv = self.B
         while not self.is_optimal(B_inv):
@@ -144,6 +144,8 @@ class Simplex:
             print("The min value is achieved at " + str(self.x) + ", and it is " + str(-self.function(self.x)))
         else:
             print("The max value is achieved at " + str(self.x) + ", and it is " + str(self.function(self.x)))
+
+        return self.function(self.x), self.x
 
     def plug_optimize(self) -> (int | float, list[int | float]):
         """

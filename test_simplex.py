@@ -84,8 +84,8 @@ class TestSimplex:
         """
         testcase = SimplexTestCase(*parse_test(test_file))
 
-        # opt, x = testcase.simplex.optimize()
-        opt, x = testcase.simplex.plug_optimize()
+        opt, x = testcase.simplex.optimise()
+        # opt, x = testcase.simplex.plug_optimize()
 
         for i, val in enumerate(x):
             assert round(val, testcase.approximation) == round(
