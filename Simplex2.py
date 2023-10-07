@@ -63,10 +63,10 @@ class Simplex:
         ), "Length of vector C does not correspond to # of cols of matrix A"
 
         self.A = np.hstack(
-            (A, np.identity(A.shape[0], dtype=np.double))
+            (A, np.identity(A.shape[0]))
         )  # Adding slack variables
         self.C = np.hstack(
-            (C, np.zeros(A.shape[0], dtype=np.double))
+            (C, np.zeros(A.shape[0]))
         )
         self.b = b
         self.eps = eps
@@ -74,12 +74,12 @@ class Simplex:
         self.m, self.n = self.A.shape
 
         # variables
-        self.B = np.identity(self.m, dtype=np.double)
-        self.C_B = np.zeros(self.m, dtype=np.double)
+        self.B = np.identity(self.m)
+        self.C_B = np.zeros(self.m)
         self.basic = list(range(self.n - self.m, self.n))
-        self.X_B = np.zeros(self.m, dtype=np.double)
+        self.X_B = np.zeros(self.m)
         self.z = 0.0
-        self.C_B_times_B_inv = np.zeros(self.m, dtype=np.double)
+        self.C_B_times_B_inv = np.zeros(self.m)
 
     def print_debug(self):
         print("-" * 10)
@@ -142,7 +142,7 @@ class Simplex:
             for i, j in enumerate(self.basic):
                 if j < self.n - self.m:
                     X_decision[j] = round(self.X_B[i], self.eps)
-            return True, SimplexSolution(X_decision, round(self.z.item(), self.eps))
+            return True, SimplexSolution(X_decision, round(self.z, self.eps))
         else:
             return False, None
 
@@ -178,7 +178,7 @@ def main():
     from input_parser import parse_file, parse_test
     from numpy import array, matrix
 
-    function, A, b, approximation = parse_file('inputs/input2.txt')
+    function, A, b, approximation = parse_file('inputs/input3.txt')
     simplex = Simplex(array(function.coefficients), A, array(b), approximation)
     np.set_printoptions(precision=approximation)
 
