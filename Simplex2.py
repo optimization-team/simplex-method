@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-import numpy.typing as npt
+# import numpy.typing as npt
 import termtables as tt
 
 
@@ -14,7 +14,7 @@ class SimplexSolution:
         value (float): Solution to maximization problem
     """
 
-    x: npt.NDArray[np.double]
+    x: np.array
     opt: float
 
 
@@ -27,21 +27,30 @@ class InfeasibleSolution(Exception):
 
 
 class Simplex:
+    """
+    Main simplex class made for calculating the optimal value of input vector for a given function and constraints.
+
+    Attributes
+    ----------
+    C: np.array
+        function to optimise
+
+    A: np.array
+        matrix of constraints (assumed that all given in the form of inequalities)
+
+    b: np.array
+        right hand side column vector (size n x 1)
+
+    eps: int
+        approximation of an answer (number of digits after comma)
+    """
     def __init__(
             self,
-            C: npt.NDArray,
-            A: npt.NDArray,
-            b: npt.NDArray,
-            eps: float = 1e-4,
+            C: np.array,
+            A: np.array,
+            b: np.array,
+            eps: int = 2,
     ):
-        """Initialization of simplex method solver.
-
-        Args:
-            A (npt.NDArray): (m x n) matrix representing the constraint coefficients
-            b (npt.NDArray): m-vector representing the constraint right-hand side
-            C (npt.NDArray): n-vector representing the objective-function coefficients
-            eps (float, optional): Approximation accuracy. Defaults to 1e-4.
-        """
 
         assert A.ndim == 2, "A is not a matrix"
         assert b.ndim == 1, "b is not a vector"
@@ -58,9 +67,10 @@ class Simplex:
         )  # Adding slack variables
         self.C = np.hstack(
             (C, np.zeros(A.shape[0], dtype=np.double))
-        )  # Adding slack variables
+        )
         self.b = b
         self.eps = eps
+        self.epsilon = 1 / (10 ** self.eps)
         self.m, self.n = self.A.shape
 
         # variables
@@ -98,10 +108,11 @@ class Simplex:
             P_j = self.A[:, [j]]
             z_j = self.C_B_times_B_inv @ P_j
             delta = z_j.item() - self.C[j]
-            if delta >= self.eps:  # maximization
+
+            if delta >= self.epsilon:  # maximization
                 count += 1
             else:
-                if delta < min_delta - self.eps:
+                if delta < min_delta - self.epsilon:
                     min_delta = delta
                     entering_j = j
         return entering_j, min_delta, count
@@ -109,17 +120,17 @@ class Simplex:
     def _estimate_ratio_col(self, entering_j):
         P_j = self.A[:, [entering_j]]
         B_inv_times_P_j = np.linalg.inv(self.B) @ P_j
-        if np.all(B_inv_times_P_j <= self.eps):
+        if np.all(B_inv_times_P_j <= self.epsilon):
             raise InfeasibleSolution
         i = 0
         leaving_i = 0
         min_ratio = float("inf")
         for j in self.basic:
-            if B_inv_times_P_j[i] <= self.eps:
+            if B_inv_times_P_j[i] <= self.epsilon:
                 i += 1
                 continue
             ratio = self.X_B[i] / B_inv_times_P_j[i].item()
-            if ratio < min_ratio - self.eps:
+            if ratio < min_ratio - self.epsilon:
                 min_ratio = ratio
                 leaving_i = j
             i += 1
@@ -127,12 +138,11 @@ class Simplex:
 
     def _check_solution_for_optimality(self, cnt):
         if cnt == self.n - self.m:
-            round_decimals = round(-np.log10(self.eps))
             X_decision = np.zeros(self.n - self.m)
             for i, j in enumerate(self.basic):
                 if j < self.n - self.m:
-                    X_decision[j] = round(self.X_B[i], 3)
-            return True, SimplexSolution(X_decision, round(self.z.item(), 3))
+                    X_decision[j] = round(self.X_B[i], self.eps)
+            return True, SimplexSolution(X_decision, round(self.z.item(), self.eps))
         else:
             return False, None
 
@@ -168,12 +178,15 @@ def main():
     from input_parser import parse_file, parse_test
     from numpy import array, matrix
 
-    function, A, b, approximation = parse_file('inputs/input4.txt')
+    function, A, b, approximation = parse_file('inputs/input5.txt')
+    simplex = Simplex(array(function.coefficients), A, array(b), approximation)
+    np.set_printoptions(precision=approximation)
 
-    simplex = Simplex(array(function.coefficients), A, array(b), 1e-4)
-
-    solution = simplex.optimise()
-    print(solution)
+    try:
+        solution = simplex.optimise()
+        print(solution)
+    except InfeasibleSolution:
+        print("The method is not applicable!")
 
 
 if __name__ == "__main__":
