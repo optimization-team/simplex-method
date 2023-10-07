@@ -2,6 +2,7 @@
 Module for Function class.
 Function class is used to store a linear function by given coefficients.
 """
+from __future__ import annotations
 
 
 class Function:
@@ -74,5 +75,5 @@ if __name__ == '__main__':
     res = f(3, 2, 1)  # also possible f((3, 2, 1)) and f([3, 2, 1])
     print(res)
     f.invert_sign()
-    res = f(3,2,1)
+    res = f(3, 2, 1)
     print(res)

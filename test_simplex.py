@@ -2,12 +2,14 @@
 Tests can be run with command: pytest
 Test cases are located in "tests" folder.
 """
+from __future__ import annotations
+
 import os
 import pytest
 from numpy import matrix, array
 from Simplex import Simplex
 from Function import Function
-from parser import parse_test
+from input_parser import parse_test
 
 
 class SimplexTestCase:
