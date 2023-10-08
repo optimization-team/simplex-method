@@ -94,6 +94,7 @@ class Simplex:
             A: np.array,
             b: np.array,
             eps: int = 2,
+            to_maximize=True,
     ):
         assert A.ndim == 2, "A is not a matrix"
         assert b.ndim == 1, "b is not a vector"
@@ -104,6 +105,7 @@ class Simplex:
             C
         ), "Length of vector C does not correspond to # of cols of matrix A"
 
+        self.to_maximize = to_maximize
         self.function = C
         self.constraints_matrix = A
 
@@ -130,6 +132,36 @@ class Simplex:
         constraints = constraints.replace("[[", "|").replace("]]", "|")
         approximation = f"Approximation: {self.eps}"
         return f"LPP:\n{self.function} -> max\n{constraints}\n{approximation}\n"
+
+    def optimise(self) -> SimplexSolution:
+        """
+        Optimise the given function with given constraints.
+        Main function of the Simplex class.
+
+        Returns
+        -------
+        SimplexSolution
+            solution of the optimization problem (vector of decision variables and optimal value)
+
+
+        """
+        if not self.to_maximize:
+            self.C = -self.C
+        while True:
+            # Step 1
+            self._compute_basic_solution()
+
+            # Step 2
+            entering_j, min_delta, cnt = self._estimate_delta_row()
+            optimal, solution = self._check_solution_for_optimality(cnt)
+            if optimal:
+                return solution
+
+            # Step 3
+            leaving_i, min_ratio, P_j = self._estimate_ratio_col(entering_j)
+
+            # Step 4
+            self._update_basis(entering_j, leaving_i, P_j)
 
     def _compute_basic_solution(self):
         """
@@ -278,35 +310,7 @@ class Simplex:
                 self.C_B[i] = self.C[entering_j]
                 break
 
-    def optimise(self, to_maximize=True) -> SimplexSolution:
-        """
-        Optimise the given function with given constraints.
-        Main function of the Simplex class.
 
-        Returns
-        -------
-        SimplexSolution
-            solution of the optimization problem (vector of decision variables and optimal value)
-
-
-        """
-        if not to_maximize:
-            self.C = -self.C
-        while True:
-            # Step 1
-            self._compute_basic_solution()
-
-            # Step 2
-            entering_j, min_delta, cnt = self._estimate_delta_row()
-            optimal, solution = self._check_solution_for_optimality(cnt)
-            if optimal:
-                return solution
-
-            # Step 3
-            leaving_i, min_ratio, P_j = self._estimate_ratio_col(entering_j)
-
-            # Step 4
-            self._update_basis(entering_j, leaving_i, P_j)
 
 
 def main():
