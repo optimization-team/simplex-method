@@ -28,7 +28,9 @@ class SimplexSolution:
 
 
 class InfeasibleSolution(Exception):
-    """Exception for in feasible case."""
+    """
+    Exception for infeasible case
+    """
 
     def __init__(self):
         super().__init__("Infeasible solution, method is not applicable!")
@@ -99,7 +101,7 @@ class Simplex:
         assert A.ndim == 2, "A is not a matrix"
         assert b.ndim == 1, "b is not a vector"
         assert (A.shape[0] == b.size), \
-            "Length of right handside vector of the constraints does not correspond to the number of rows of matrix A"
+            "Length of right-handside vector of the constraints does not correspond to the number of rows of matrix A"
         assert A.shape[1] == len(C), \
             "Number of variables in objective function does not correspond to the number of cols of matrix A"
 
@@ -120,7 +122,7 @@ class Simplex:
         self.basic = list(range(self.n - self.m, self.n))
         self.X_B = np.zeros(self.m)
         self.z = 0.0
-        self.C_B_times_B_inv = np.zeros(self.m)
+        self.C_B_mul_B_inv = np.zeros(self.m)
 
     def __str__(self):
         to_maximize = "max" if self.to_maximize else "min"
@@ -141,8 +143,6 @@ class Simplex:
         -------
         SimplexSolution
             solution of the optimization problem (vector of decision variables and optimal value)
-
-
         """
         if not self.to_maximize:
             self.C = -self.C
@@ -171,11 +171,10 @@ class Simplex:
         Returns
         -------
         None
-
         """
         self.X_B = np.linalg.inv(self.B) @ self.b
         self.z = self.C_B @ self.X_B
-        self.C_B_times_B_inv = self.C_B @ np.linalg.inv(self.B)
+        self.C_B_mul_B_inv = self.C_B @ np.linalg.inv(self.B)
 
     def _estimate_delta_row(self):
         """
@@ -196,23 +195,26 @@ class Simplex:
         count: int
             number of positive deltas in the row
         """
-        entering_j = 0
+        entering_var = 0
         min_delta = float("inf")
         positive_delta_count = 0
-        for j in range(self.n):
-            if j in self.basic:
+
+        for column in range(self.n):
+            if column in self.basic:
                 continue
-            P_j = self.A[:, [j]]
-            z_j = self.C_B_times_B_inv @ P_j
-            delta = z_j.item() - self.C[j]
+
+            P_j = self.A[:, [column]]
+            z_j = self.C_B_mul_B_inv @ P_j
+            delta = z_j.item() - self.C[column]
 
             if delta >= self.epsilon:
                 positive_delta_count += 1
             else:
                 if delta < min_delta - self.epsilon:
                     min_delta = delta
-                    entering_j = j
-        return entering_j, min_delta, positive_delta_count
+                    entering_var = column
+
+        return entering_var, min_delta, positive_delta_count
 
     def _estimate_ratio_col(self, entering_j):
         """
@@ -236,25 +238,24 @@ class Simplex:
 
         P_j: np.array
             column of the matrix A corresponding to the entering variable
-
         """
         P_j = self.A[:, [entering_j]]
-        B_inv_times_P_j = np.linalg.inv(self.B) @ P_j
-        if np.all(B_inv_times_P_j <= self.epsilon):
+        B_inv_mul_P_j = np.linalg.inv(self.B) @ P_j
+        if np.all(B_inv_mul_P_j <= self.epsilon):
             raise InfeasibleSolution
         i = 0
-        leaving_i = 0
+        leaving_var = 0
         min_ratio = float("inf")
         for j in self.basic:
-            if B_inv_times_P_j[i] <= self.epsilon:
+            if B_inv_mul_P_j[i] <= self.epsilon:
                 i += 1
                 continue
-            ratio = self.X_B[i] / B_inv_times_P_j[i].item()
+            ratio = self.X_B[i] / B_inv_mul_P_j[i].item()
             if ratio < min_ratio - self.epsilon:
                 min_ratio = ratio
-                leaving_i = j
+                leaving_var = j
             i += 1
-        return leaving_i, min_ratio, P_j
+        return leaving_var, min_ratio, P_j
 
     def _check_solution_for_optimality(self, count):
         """
@@ -274,7 +275,6 @@ class Simplex:
 
         SimplexSolution
             solution if the solution is optimal, None otherwise
-
         """
         if count == self.n - self.m:
             x_decision = np.zeros(self.n - self.m)
@@ -310,7 +310,7 @@ class Simplex:
                 break
 
 
-def main():
+if __name__ == "__main__":
     from input_parser import parse_file
 
     simplex = Simplex(*parse_file("inputs/input1.txt"))
@@ -321,7 +321,3 @@ def main():
         print(solution)
     except InfeasibleSolution:
         print("SOLUTION:\nThe method is not applicable!")
-
-
-if __name__ == "__main__":
-    main()
