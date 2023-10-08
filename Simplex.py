@@ -1,21 +1,38 @@
-"""
-Module for solving maximization and minimization problems using simplex method.
-"""
-from __future__ import annotations
-
-from enum import Enum
-from Function import Function
-import termtables as tt
-from scipy.optimize import linprog
+from dataclasses import dataclass
 
 import numpy as np
+import termtables as tt
+from Function import Function
 
 
-class Solution(Exception):
-    """Custom exception class for the Simplex algorithm. Contains solution for an optimization problem."""
-    def __init__(self, X, z):
-        self.X = X
-        self.z = z
+@dataclass
+class SimplexSolution:
+    """
+    Custom exception class for the Simplex algorithm. Contains solution for an optimization problem.
+
+    Attributes
+    ----------
+    x: np.array
+    opt: float
+    """
+
+    x: np.array
+    opt: float
+
+    def __str__(self):
+        return (
+            f"SOLUTION: \n"
+            f"Vector of decision variables: ({', '.join(map(str, self.x))}),\n"
+            f"Optimal value: {self.opt}"
+        )
+
+
+class InfeasibleSolution(Exception):
+    """Raised when no feasible solution is found."""
+
+    def __init__(self, message="No feasible solution is found"):
+        self.message = message
+        super().__init__(self.message)
 
 
 class Simplex:
@@ -24,181 +41,289 @@ class Simplex:
 
     Attributes
     ----------
-    function: Function
-        function to optimise
+        Initial variables:
+        ------------------
+        function: Function
+            initial function
 
-    matrix: Matrix
-        matrix of constraints (assumed that all given in the form of inequalities)
+        constraints_matrix: np.array
+            initial matrix of constraints
 
-    b: Matrix
-        right hand side column vector (size n x 1)
+        C: np.array
+            function with slack variables
 
-    approximation: int | float
-        approximation of an answer
+        A: np.array
+            matrix of constraints (assumed that all given in the form of inequalities) with slack variables
 
-    to_maximise: bool
-        True - function has to be maximised
-        False - function has to be minimised
+        b: np.array
+            right hand side column vector (size n x 1)
 
-    Methods
-    ----------
-    show_table(function, basic, b, matrix, delta_row)
-        draws a table with given data in console
+        eps: int
+            approximation of an answer (number of digits after comma)
 
-    plug_optimize()
-        plug method for autotests
+        m: int
+            number of constraints
 
-    update_basis()
-        method for updating the basis matrix B, basis indices, and coefficients.
-        get_non_basis()
-            returns non-basis vectors of A matrix
-        new_basis()
-            returns updated basis matrix B, basis indices and coefficients
-        Returns nothing
+        n: int
+            number of variables
 
+        Simplex table variables:
+        ------------------------
+        B: np.array
+            basis matrix
+
+        C_B: np.array
+            vector of coefficients of the basis variables
+
+        basic: list[int]
+            list of indices of basic variables
+
+        X_B: np.array
+            vector of basic variables
+
+        z: float
+            value of the objective function
+
+        C_B_times_B_inv: np.array
+            helper vector for calculating z
     """
 
-    def __init__(self, function: Function, A: np.array, b: np.array, approximation: int,
-                 to_minimize: bool = False):
-        np.set_printoptions(precision=approximation)
+    def __init__(
+            self,
+            C: Function,
+            A: np.array,
+            b: np.array,
+            eps: int = 2,
+    ):
+        assert A.ndim == 2, "A is not a matrix"
+        assert b.ndim == 1, "b is not a vector"
+        assert (
+                A.shape[0] == b.size
+        ), "Length of vector b does not correspond to # of rows of matrix A"
+        assert A.shape[1] == len(
+            C
+        ), "Length of vector C does not correspond to # of cols of matrix A"
 
-        # constants
-        self.function = function
-        self.A = A
+        self.function = C
+        self.constraints_matrix = A
+
+        self.C = np.hstack((np.array(C.coefficients), np.zeros(A.shape[0])))
+        self.A = np.hstack((A, np.identity(A.shape[0])))
+
         self.b = b
-        self.to_minimize = to_minimize
-        n, m = np.shape(self.A)  # number of vars and number of constraints
+        self.eps = eps
+        self.epsilon = 1 / (10 ** self.eps)
+        self.m, self.n = self.A.shape
 
-        # variables
-        self.x = np.zeros((n, 1))  # current solution, where x_B = [x[i] for i in basic_indices]
-        self.basic_indices = [i for i in range(n - m + 1, n + 1)]  # each index is in range 1,...,n
-        self.B = np.identity(len(self.b))
-        self.c_B = np.zeros((1, len(self.basic_indices)))  # basic var coefs
-        self.c = self.function.coefficients  # nonbasic var coefs
+        self.B = np.identity(self.m)
+        self.C_B = np.zeros(self.m)
+        self.basic = list(range(self.n - self.m, self.n))
+        self.X_B = np.zeros(self.m)
+        self.z = 0.0
+        self.C_B_times_B_inv = np.zeros(self.m)
 
-        # min or max?
-        if to_minimize:
-            self.function.invert_sign()
+    def __str__(self):
+        # constraints = f""
+        constraints = f""
+        for i in range(self.m):
+            constraints += f"{self.constraints_matrix[i]} <= {self.b[i]}\n"
+        # delete last \n
+        constraints = constraints[:-1]
+        # replace [[ with | and ]] with |
+        constraints = constraints.replace("[[", "|").replace("]]", "|")
+        approximation = f"Approximation: {self.eps}"
+        return f"LPP:\n{self.function}\n{constraints}\n{approximation}\n"
 
-    def compute_basic_solution(self, B_inv) -> None:
-        x_B = np.dot(B_inv, self.b)
-        for i in range(len(self.basic_indices)):
-            self.x[self.basic_indices[i] - 1] = x_B[i - 1]
-
-    def update_basis(self) -> None:
-
-        class MinMax(Enum):
-            MIN = 1
-            MAX = 2
-
-            @staticmethod
-            def from_to_minimize():
-                if self.to_minimize:
-                    return MinMax.MIN
-                else:
-                    return MinMax.MAX
-
-        def get_non_basis(A, basis):
-            variables = np.arange(len(A[0]))
-            mask = np.ones(variables.size, dtype=bool)
-            mask[basis] = False
-            return variables[mask]
-
-        def is_optimal(self, B_inv) -> bool:
-            # optimal if z-c >= 0
-            # z = c_B * B_inv * A' ,
-            difference = self.c_B @ B_inv @ get_non_basis(self.A, self.basic_indices) - self.c
-            if self.to_minimize:
-                for i in difference:
-                    if i > 0:
-                        return False
-            else:
-                for i in difference:
-                    if i < 0:
-                        return False
-            return True
-
-        # basis is number of
-        def new_basis(B, A, b, basis, C, C_basis, minMax):
-            Xb = np.matmul(np.linalg.inv(B), b)
-            non_basis = get_non_basis(A, basis)
-            optimality = np.matmul(np.matmul(C_basis, np.linalg.inv(B)), A[:, non_basis]) - C[non_basis]
-            if minMax == MinMax.MIN:
-                if (optimality <= 0).all():
-                    raise Solution(X=Xb, z=np.matmul(C_basis, Xb))
-                entering_vec_pos = non_basis[np.where(optimality == np.max(optimality))[0][0]]
-            elif minMax == MinMax.MAX:
-                if (optimality >= 0).all():
-                    raise Solution(X=Xb, z=np.matmul(C_basis, Xb))
-                entering_vec_pos = non_basis[np.where(optimality == np.min(optimality))[0][0]]
-            entering_vec = np.matmul(np.linalg.inv(B), A[:, entering_vec_pos])
-            if (entering_vec <= 0).all():
-                raise Exception("Unbounded solution")
-            np.seterr(divide='ignore')
-            feasibility = np.divide(Xb, entering_vec)
-            feasibility = feasibility[feasibility != np.inf]
-            feasibility = feasibility[feasibility > 0]
-            if (feasibility <= 0).all():
-                raise Exception("Infeasible")
-            leaving_var = np.where(feasibility == np.min(feasibility))[0][0]
-            B[:, leaving_var] = entering_vec
-            basis[leaving_var] = entering_vec_pos
-            C_basis[leaving_var] = C[entering_vec_pos]
-            return B, basis, C_basis
-
-        (B, basis, C_basis) = new_basis(self.B, self.A, self.b, self.basic_indices, self.c, self.c_B,
-                                        MinMax.from_to_minimize())
-        self.B = B
-        self.basic_indices = basis
-        self.c_B = C_basis
-
-    def optimise(self):
-        self.compute_basic_solution(self.B)
-        B_inv = self.B
-        while not self.is_optimal(B_inv):
-            self.update_basis()
-            self.compute_basic_solution(np.invert(self.B))
-
-        if self.to_minimize:
-            print("The min value is achieved at " + str(self.x) + ", and it is " + str(-self.function(self.x)))
-        else:
-            print("The max value is achieved at " + str(self.x) + ", and it is " + str(self.function(self.x)))
-
-        return self.function(self.x), self.x
-
-    def plug_optimize(self) -> (int | float, list[int | float]):
+    def _compute_basic_solution(self):
         """
-        Plug method for autotests
+        Compute basic solution at current iteration.
+        Helper function for the optimise method.
+        See Also:
+            optimise
         Returns
         -------
-        (int | float, list[int | float])
-            optimal value and optimal vector
+        None
 
         """
-        function = Function(list(self.function.coefficients))
-        b = self.b
-        matrix = self.A
-        # change sign of function coefficients,
-        # because linprog solves the minimization problem
-        function.coefficients = [-el for el in function.coefficients]
-        opt = linprog(
-            c=function.coefficients,
-            A_ub=matrix,
-            b_ub=b,
-            A_eq=None,
-            b_eq=None,
-            bounds=[(0, float("inf")) for _ in range(len(function))],
-            method="highs"
-        )
-        return -opt.fun, opt.x
+        self.X_B = np.linalg.inv(self.B) @ self.b
+        self.z = self.C_B @ self.X_B
+        self.C_B_times_B_inv = self.C_B @ np.linalg.inv(self.B)
+
+    def _estimate_delta_row(self):
+        """
+        Estimate delta row at current iteration.
+        Finds the entering variable.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+
+        Returns
+        -------
+        entering_j: int
+            index of the entering variable in the table
+
+        min_delta: float
+            minimum delta value in the row
+
+        count: int
+            number of positive deltas in the row
+        """
+        entering_j = 0
+        min_delta = float("inf")
+        positive_delta_count = 0
+        for j in range(self.n):
+            if j in self.basic:
+                continue
+            P_j = self.A[:, [j]]
+            z_j = self.C_B_times_B_inv @ P_j
+            delta = z_j.item() - self.C[j]
+
+            if delta >= self.epsilon:
+                positive_delta_count += 1
+            else:
+                if delta < min_delta - self.epsilon:
+                    min_delta = delta
+                    entering_j = j
+        return entering_j, min_delta, positive_delta_count
+
+    def _estimate_ratio_col(self, entering_j):
+        """
+        Estimate ratio column at current iteration.
+        Finds the leaving variable.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        entering_j: int
+            index of the entering variable in the table
+
+        Returns
+        -------
+        leaving_i: int
+            index of the leaving variable in the table
+
+        min_ratio: float
+            minimum ratio value in the column
+
+        P_j: np.array
+            column of the matrix A corresponding to the entering variable
+
+        """
+        P_j = self.A[:, [entering_j]]
+        B_inv_times_P_j = np.linalg.inv(self.B) @ P_j
+        if np.all(B_inv_times_P_j <= self.epsilon):
+            raise InfeasibleSolution
+        i = 0
+        leaving_i = 0
+        min_ratio = float("inf")
+        for j in self.basic:
+            if B_inv_times_P_j[i] <= self.epsilon:
+                i += 1
+                continue
+            ratio = self.X_B[i] / B_inv_times_P_j[i].item()
+            if ratio < min_ratio - self.epsilon:
+                min_ratio = ratio
+                leaving_i = j
+            i += 1
+        return leaving_i, min_ratio, P_j
+
+    def _check_solution_for_optimality(self, count):
+        """
+        Check if the solution is optimal.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        count: int
+            number of positive deltas in the row
+
+        Returns
+        -------
+        bool
+            True if the solution is optimal, False otherwise
+
+        SimplexSolution
+            solution if the solution is optimal, None otherwise
+
+        """
+        if count == self.n - self.m:
+            x_decision = np.zeros(self.n - self.m)
+            for i, j in enumerate(self.basic):
+                if j < self.n - self.m:
+                    x_decision[j] = round(self.X_B[i], self.eps)
+            return True, SimplexSolution(x_decision, round(self.z, self.eps))
+        else:
+            return False, None
+
+    def _update_basis(self, entering_j, leaving_i, P_j):
+        """
+        Update basis at current iteration.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        entering_j
+        leaving_i
+        P_j
+
+        Returns
+        -------
+        None
+
+        """
+        for i in range(self.m):
+            if self.basic[i] == leaving_i:
+                self.B[:, [i]] = P_j
+                self.basic[i] = entering_j
+                self.C_B[i] = self.C[entering_j]
+                break
+
+    def optimise(self, to_maximize=True) -> SimplexSolution:
+        """
+        Optimise the given function with given constraints.
+        Main function of the Simplex class.
+
+        Returns
+        -------
+        SimplexSolution
+            solution of the optimization problem (vector of decision variables and optimal value)
 
 
-if __name__ == '__main__':
-    from input_parser import parse_file, parse_test
+        """
+        if not to_maximize:
+            self.C = -self.C
+        while True:
+            # Step 1
+            self._compute_basic_solution()
 
-    s = Simplex(*parse_file('inputs/input2.txt'))
+            # Step 2
+            entering_j, min_delta, cnt = self._estimate_delta_row()
+            optimal, solution = self._check_solution_for_optimality(cnt)
+            if optimal:
+                return solution
 
-    opt, x = s.optimise()
+            # Step 3
+            leaving_i, min_ratio, P_j = self._estimate_ratio_col(entering_j)
 
-    print(opt)
-    print(x)
+            # Step 4
+            self._update_basis(entering_j, leaving_i, P_j)
+
+
+def main():
+    from input_parser import parse_file
+
+    simplex = Simplex(*parse_file("inputs/input1.txt"))
+    np.set_printoptions(precision=simplex.eps)
+    print(simplex)
+    try:
+        solution = simplex.optimise()
+        print(solution)
+    except InfeasibleSolution:
+        print("The method is not applicable!")
+
+
+if __name__ == "__main__":
+    main()

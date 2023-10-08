@@ -2,8 +2,6 @@
 Tests can be run with command: pytest
 Test cases are located in "tests" folder.
 """
-from __future__ import annotations
-
 import os
 import pytest
 from numpy import matrix, array
@@ -27,22 +25,22 @@ class SimplexTestCase:
     """
 
     def __init__(
-        self,
-        function: Function,
-        matrix: matrix,
-        b: array,
-        approximation: int | float,
-        x: list[float],
-        opt: int | float,
+            self,
+            function: Function,
+            matrix: matrix,
+            b: array,
+            approximation: int | float,
+            x: list[float],
+            opt: int | float,
     ):
-        self.simplex = Simplex(function, matrix, b, approximation)
+        self.simplex = Simplex(function, matrix, array(b), approximation)
         self.x = x
         self.opt = opt
         self.approximation = approximation
 
     def __str__(self):
         return (
-            f"TestCase:\n{self.simplex.function},\n"
+            f"TestCase:\n{self.simplex.C},\n"
             f"A:\n{self.simplex.A},\n"
             f"b: {self.simplex.b},\n"
             f"accuracy: {self.approximation},\n"
@@ -84,14 +82,14 @@ class TestSimplex:
         None
 
         """
+
         testcase = SimplexTestCase(*parse_test(test_file))
 
-        opt, x = testcase.simplex.optimise()
-        # opt, x = testcase.simplex.plug_optimize()
+        solution = testcase.simplex.optimise()
 
-        for i, val in enumerate(x):
+        for i, val in enumerate(solution.x):
             assert round(val, testcase.approximation) == round(
                 testcase.x[i], testcase.approximation
             )
 
-        assert opt == testcase.opt
+        assert solution.opt == testcase.opt

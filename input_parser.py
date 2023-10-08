@@ -3,8 +3,8 @@ Parser for input files and test files.
 Parses files into arguments for Simplex and SimplexTestCase classes.
 
 See Also:
-    Simplex from Simplex.py
-    SimplexTestCase from test_simplex.py
+    Simplex from Simplex3.py
+    SimplexTestCase from test_simplex3.py
 """
 
 from Function import Function
