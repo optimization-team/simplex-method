@@ -123,16 +123,13 @@ class Simplex:
         self.C_B_times_B_inv = np.zeros(self.m)
 
     def __str__(self):
-        # constraints = f""
         constraints = f""
         for i in range(self.m):
             constraints += f"{self.constraints_matrix[i]} <= {self.b[i]}\n"
-        # delete last \n
         constraints = constraints[:-1]
-        # replace [[ with | and ]] with |
         constraints = constraints.replace("[[", "|").replace("]]", "|")
         approximation = f"Approximation: {self.eps}"
-        return f"LPP:\n{self.function}\n{constraints}\n{approximation}\n"
+        return f"LPP:\n{self.function} -> max\n{constraints}\n{approximation}\n"
 
     def _compute_basic_solution(self):
         """
