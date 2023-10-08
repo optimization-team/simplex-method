@@ -26,6 +26,7 @@ def parse_file(filename: str):
 
         b = list(map(float, file.readline().split()))
         file.readline()
+        b = array(b)
 
         approximation = int(file.readline().strip())
 
@@ -55,6 +56,7 @@ def parse_test(filename: str):
 
         b = list(map(float, file.readline().split()))
         file.readline()
+        b = array(b)
 
         approximation = int(file.readline().strip())
 

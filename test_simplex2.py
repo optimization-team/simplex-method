@@ -33,7 +33,7 @@ class SimplexTestCase:
             x: list[float],
             opt: int | float,
     ):
-        self.simplex = Simplex(array(function.coefficients), matrix, array(b), approximation)
+        self.simplex = Simplex(function, matrix, array(b), approximation)
         self.x = x
         self.opt = opt
         self.approximation = approximation

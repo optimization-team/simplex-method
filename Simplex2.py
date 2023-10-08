@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import termtables as tt
+from Function import Function
 
 
 @dataclass
@@ -14,13 +15,15 @@ class SimplexSolution:
     x: np.array
     opt: float
     """
+
     x: np.array
     opt: float
 
     def __str__(self):
         return (
+            f"SOLUTION: \n"
             f"Vector of decision variables: ({', '.join(map(str, self.x))}),\n"
-            f"Optimal value of objection function: {self.opt}"
+            f"Optimal value: {self.opt}"
         )
 
 
@@ -38,49 +41,80 @@ class Simplex:
 
     Attributes
     ----------
-    C: np.array
-        function to optimise
+        Initial variables:
+        ------------------
+        function: Function
+            initial function
 
-    A: np.array
-        matrix of constraints (assumed that all given in the form of inequalities)
+        constraints_matrix: np.array
+            initial matrix of constraints
 
-    b: np.array
-        right hand side column vector (size n x 1)
+        C: np.array
+            function with slack variables
 
-    eps: int
-        approximation of an answer (number of digits after comma)
+        A: np.array
+            matrix of constraints (assumed that all given in the form of inequalities) with slack variables
+
+        b: np.array
+            right hand side column vector (size n x 1)
+
+        eps: int
+            approximation of an answer (number of digits after comma)
+
+        m: int
+            number of constraints
+
+        n: int
+            number of variables
+
+        Simplex table variables:
+        ------------------------
+        B: np.array
+            basis matrix
+
+        C_B: np.array
+            vector of coefficients of the basis variables
+
+        basic: list[int]
+            list of indices of basic variables
+
+        X_B: np.array
+            vector of basic variables
+
+        z: float
+            value of the objective function
+
+        C_B_times_B_inv: np.array
+            helper vector for calculating z
     """
+
     def __init__(
             self,
-            C: np.array,
+            C: Function,
             A: np.array,
             b: np.array,
             eps: int = 2,
     ):
-
         assert A.ndim == 2, "A is not a matrix"
         assert b.ndim == 1, "b is not a vector"
-        assert C.ndim == 1, "C is not a vector"
         assert (
                 A.shape[0] == b.size
         ), "Length of vector b does not correspond to # of rows of matrix A"
-        assert (
-                A.shape[1] == C.size
+        assert A.shape[1] == len(
+            C
         ), "Length of vector C does not correspond to # of cols of matrix A"
 
-        # Addition of slack variables to the matrix A and vector C
-        self.A = np.hstack(
-            (A, np.identity(A.shape[0]))
-        )
-        self.C = np.hstack(
-            (C, np.zeros(A.shape[0]))
-        )
+        self.function = C
+        self.constraints_matrix = A
+
+        self.C = np.hstack((np.array(C.coefficients), np.zeros(A.shape[0])))
+        self.A = np.hstack((A, np.identity(A.shape[0])))
+
         self.b = b
         self.eps = eps
         self.epsilon = 1 / (10 ** self.eps)
         self.m, self.n = self.A.shape
 
-        # variables for the simplex table
         self.B = np.identity(self.m)
         self.C_B = np.zeros(self.m)
         self.basic = list(range(self.n - self.m, self.n))
@@ -88,22 +122,52 @@ class Simplex:
         self.z = 0.0
         self.C_B_times_B_inv = np.zeros(self.m)
 
-    def print_debug(self):
-        print("-" * 10)
-        print("BASIC:", self.basic)
-        print("B:", self.B)
-        print("X_B:", self.X_B)
-        print("Z:", self.z)
-        print("C_B:", self.C_B)
-        print("C_B*B_inv", self.C_B_times_B_inv)
-
+    def __str__(self):
+        # constraints = f""
+        constraints = f""
+        for i in range(self.m):
+            constraints += f"{self.constraints_matrix[i]} <= {self.b[i]}\n"
+        # delete last \n
+        constraints = constraints[:-1]
+        # replace [[ with | and ]] with |
+        constraints = constraints.replace("[[", "|").replace("]]", "|")
+        approximation = f"Approximation: {self.eps}"
+        return f"LPP:\n{self.function}\n{constraints}\n{approximation}\n"
 
     def _compute_basic_solution(self):
+        """
+        Compute basic solution at current iteration.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Returns
+        -------
+        None
+
+        """
         self.X_B = np.linalg.inv(self.B) @ self.b
         self.z = self.C_B @ self.X_B
         self.C_B_times_B_inv = self.C_B @ np.linalg.inv(self.B)
 
     def _estimate_delta_row(self):
+        """
+        Estimate delta row at current iteration.
+        Finds the entering variable.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+
+        Returns
+        -------
+        entering_j: int
+            index of the entering variable in the table
+
+        min_delta: float
+            minimum delta value in the row
+
+        count: int
+            number of positive deltas in the row
+        """
         entering_j = 0
         min_delta = float("inf")
         count = 0
@@ -123,6 +187,29 @@ class Simplex:
         return entering_j, min_delta, count
 
     def _estimate_ratio_col(self, entering_j):
+        """
+        Estimate ratio column at current iteration.
+        Finds the leaving variable.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        entering_j: int
+            index of the entering variable in the table
+
+        Returns
+        -------
+        leaving_i: int
+            index of the leaving variable in the table
+
+        min_ratio: float
+            minimum ratio value in the column
+
+        P_j: np.array
+            column of the matrix A corresponding to the entering variable
+
+        """
         P_j = self.A[:, [entering_j]]
         B_inv_times_P_j = np.linalg.inv(self.B) @ P_j
         if np.all(B_inv_times_P_j <= self.epsilon):
@@ -141,8 +228,27 @@ class Simplex:
             i += 1
         return leaving_i, min_ratio, P_j
 
-    def _check_solution_for_optimality(self, cnt):
-        if cnt == self.n - self.m:
+    def _check_solution_for_optimality(self, count):
+        """
+        Check if the solution is optimal.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        count: int
+            number of positive deltas in the row
+
+        Returns
+        -------
+        bool
+            True if the solution is optimal, False otherwise
+
+        SimplexSolution
+            solution if the solution is optimal, None otherwise
+
+        """
+        if count == self.n - self.m:
             X_decision = np.zeros(self.n - self.m)
             for i, j in enumerate(self.basic):
                 if j < self.n - self.m:
@@ -152,6 +258,22 @@ class Simplex:
             return False, None
 
     def _update_basis(self, entering_j, leaving_i, P_j):
+        """
+        Update basis at current iteration.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        entering_j
+        leaving_i
+        P_j
+
+        Returns
+        -------
+        None
+
+        """
         for i in range(self.m):
             if self.basic[i] == leaving_i:
                 self.B[:, [i]] = P_j
@@ -159,12 +281,23 @@ class Simplex:
                 self.C_B[i] = self.C[entering_j]
                 break
 
-    def optimise(self, debug: bool = False) -> SimplexSolution:
+    def optimise(self, to_maximize=True) -> SimplexSolution:
+        """
+        Optimise the given function with given constraints.
+        Main function of the Simplex class.
+
+        Returns
+        -------
+        SimplexSolution
+            solution of the optimization problem (vector of decision variables and optimal value)
+
+
+        """
+        if not to_maximize:
+            self.C = -self.C
         while True:
             # Step 1
             self._compute_basic_solution()
-            if debug:
-                self.print_debug()
 
             # Step 2
             entering_j, min_delta, cnt = self._estimate_delta_row()
@@ -181,11 +314,9 @@ class Simplex:
 
 def main():
     from input_parser import parse_file
-    from numpy import array
 
-    function, A, b, approximation = parse_file('inputs/input1.txt')
-    simplex = Simplex(array(function.coefficients), A, array(b), approximation)
-    np.set_printoptions(precision=approximation)
+    simplex = Simplex(*parse_file("inputs/input1.txt"))
+    np.set_printoptions(precision=simplex.eps)
     print(simplex)
     try:
         solution = simplex.optimise()
