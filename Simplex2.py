@@ -170,7 +170,7 @@ class Simplex:
         """
         entering_j = 0
         min_delta = float("inf")
-        count = 0
+        positive_delta_count = 0
         for j in range(self.n):
             if j in self.basic:
                 continue
@@ -178,13 +178,13 @@ class Simplex:
             z_j = self.C_B_times_B_inv @ P_j
             delta = z_j.item() - self.C[j]
 
-            if delta >= self.epsilon:  # maximization
-                count += 1
+            if delta >= self.epsilon:
+                positive_delta_count += 1
             else:
                 if delta < min_delta - self.epsilon:
                     min_delta = delta
                     entering_j = j
-        return entering_j, min_delta, count
+        return entering_j, min_delta, positive_delta_count
 
     def _estimate_ratio_col(self, entering_j):
         """
@@ -249,11 +249,11 @@ class Simplex:
 
         """
         if count == self.n - self.m:
-            X_decision = np.zeros(self.n - self.m)
+            x_decision = np.zeros(self.n - self.m)
             for i, j in enumerate(self.basic):
                 if j < self.n - self.m:
-                    X_decision[j] = round(self.X_B[i], self.eps)
-            return True, SimplexSolution(X_decision, round(self.z, self.eps))
+                    x_decision[j] = round(self.X_B[i], self.eps)
+            return True, SimplexSolution(x_decision, round(self.z, self.eps))
         else:
             return False, None
 
