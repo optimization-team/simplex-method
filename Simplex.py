@@ -28,11 +28,10 @@ class SimplexSolution:
 
 
 class InfeasibleSolution(Exception):
-    """Raised when no feasible solution is found."""
+    """Exception for in feasible case."""
 
-    def __init__(self, message="No feasible solution is found"):
-        self.message = message
-        super().__init__(self.message)
+    def __init__(self):
+        super().__init__("Infeasible solution, method is not applicable!")
 
 
 class Simplex:
@@ -96,14 +95,13 @@ class Simplex:
             eps: int = 2,
             to_maximize=True,
     ):
+
         assert A.ndim == 2, "A is not a matrix"
         assert b.ndim == 1, "b is not a vector"
-        assert (
-                A.shape[0] == b.size
-        ), "Length of vector b does not correspond to # of rows of matrix A"
-        assert A.shape[1] == len(
-            C
-        ), "Length of vector C does not correspond to # of cols of matrix A"
+        assert (A.shape[0] == b.size), \
+            "Length of right handside vector of the constraints does not correspond to the number of rows of matrix A"
+        assert A.shape[1] == len(C), \
+            "Number of variables in objective function does not correspond to the number of cols of matrix A"
 
         self.to_maximize = to_maximize
         self.function = C
@@ -322,7 +320,7 @@ def main():
         solution = simplex.optimise()
         print(solution)
     except InfeasibleSolution:
-        print("The method is not applicable!")
+        print("SOLUTION:\nThe method is not applicable!")
 
 
 if __name__ == "__main__":
