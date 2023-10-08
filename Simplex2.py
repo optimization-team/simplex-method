@@ -17,6 +17,12 @@ class SimplexSolution:
     x: np.array
     opt: float
 
+    def __str__(self):
+        return (
+            f"Vector of decision variables: ({', '.join(map(str, self.x))}),\n"
+            f"Optimal value of objection function: {self.opt}"
+        )
+
 
 class InfeasibleSolution(Exception):
     """Raised when no feasible solution is found."""
@@ -62,9 +68,10 @@ class Simplex:
                 A.shape[1] == C.size
         ), "Length of vector C does not correspond to # of cols of matrix A"
 
+        # Addition of slack variables to the matrix A and vector C
         self.A = np.hstack(
             (A, np.identity(A.shape[0]))
-        )  # Adding slack variables
+        )
         self.C = np.hstack(
             (C, np.zeros(A.shape[0]))
         )
@@ -73,7 +80,7 @@ class Simplex:
         self.epsilon = 1 / (10 ** self.eps)
         self.m, self.n = self.A.shape
 
-        # variables
+        # variables for the simplex table
         self.B = np.identity(self.m)
         self.C_B = np.zeros(self.m)
         self.basic = list(range(self.n - self.m, self.n))
@@ -90,8 +97,6 @@ class Simplex:
         print("C_B:", self.C_B)
         print("C_B*B_inv", self.C_B_times_B_inv)
 
-    def print_table(self, entering_j, leaving_i, P_j):
-        pass
 
     def _compute_basic_solution(self):
         self.X_B = np.linalg.inv(self.B) @ self.b
@@ -175,13 +180,13 @@ class Simplex:
 
 
 def main():
-    from input_parser import parse_file, parse_test
-    from numpy import array, matrix
+    from input_parser import parse_file
+    from numpy import array
 
-    function, A, b, approximation = parse_file('inputs/input3.txt')
+    function, A, b, approximation = parse_file('inputs/input1.txt')
     simplex = Simplex(array(function.coefficients), A, array(b), approximation)
     np.set_printoptions(precision=approximation)
-
+    print(simplex)
     try:
         solution = simplex.optimise()
         print(solution)
