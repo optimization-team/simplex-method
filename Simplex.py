@@ -196,7 +196,7 @@ class Simplex:
 if __name__ == '__main__':
     from input_parser import parse_file, parse_test
 
-    s = Simplex(*parse_file('inputs/input2.txt'))
+    s = Simplex(*parse_file('inputs/input1.txt'))
 
     opt, x = s.optimise()
 

@@ -174,9 +174,10 @@ class Simplex:
             self._update_basis(entering_j, leaving_i, P_j)
 
 
-def main():
+if __name__ == "__main__":
     from input_parser import parse_file, parse_test
     from numpy import array, matrix
+    import pytest
 
     function, A, b, approximation = parse_file('inputs/input3.txt')
     simplex = Simplex(array(function.coefficients), A, array(b), approximation)
@@ -184,10 +185,9 @@ def main():
 
     try:
         solution = simplex.optimise()
-        print(solution)
+        print(solution.x)
+        print(solution.opt)
     except InfeasibleSolution:
         print("The method is not applicable!")
 
-
-if __name__ == "__main__":
-    main()
+    pytest.main()
