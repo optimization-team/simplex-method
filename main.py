@@ -63,19 +63,19 @@ if __name__ == "__main__":
     print("Do you want to maximize or minimize? (max/min)")
     max_min = input().strip().lower()
 
-    print("Should the iteration steps be printed? (y/n)")
-    print_steps = input().strip().lower() == "y"
+    # print("Should the iteration steps be printed? (y/n)")
+    # print_steps = input().strip().lower() == "y"
 
     if choice == "console":
         print("Enter input from console")
         C, A, b, eps = read_input_from_console()
-        run_simplex(C, A, b, eps, max_min, print_steps)
+        run_simplex(C, A, b, eps, max_min, print_steps=False)
     elif choice == "file":
         print("Enter the name of the input file from the \"inputs\" folder (e.g., 'input1.txt'):")
         input_file = None
         while input_file is None:
             input_file = read_input_from_file(input().strip())
         C, A, b, eps = input_file
-        run_simplex(C, A, b, eps, max_min, print_steps)
+        run_simplex(C, A, b, eps, max_min, print_steps=False)
     else:
         print("Invalid choice. Please choose 'console' or 'file'.")
