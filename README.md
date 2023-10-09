@@ -12,6 +12,8 @@ To test the program on your input, run the main.py file.
   - Enter number of digits after decimal point (precision).
 - If you chose input from file, specify the name of the file from [inputs](https://github.com/optimization-team/simplex-method/tree/main/inputs) folder you want to use
 - Check, if the results are what you expected.
+
+To execute automated tests for all test cases located in the 'tests' folder, run the 'pytest' command from the root directory.
 ## Structure of the project
 ### [inputs](https://github.com/optimization-team/simplex-method/tree/main/inputs)
 Folder, containing 5 different inputs, on which the program was tested.
