@@ -116,13 +116,15 @@ class Simplex:
         self.eps = eps
         self.epsilon = 1 / (10 ** self.eps)
         self.m, self.n = self.A.shape
-
+        self.z_row = []
         self.B = np.identity(self.m)
         self.C_B = np.zeros(self.m)
         self.basic = list(range(self.n - self.m, self.n))
         self.X_B = np.zeros(self.m)
         self.z = 0.0
+        self.delta = 0.0
         self.C_B_mul_B_inv = np.zeros(self.m)
+        self.iteration = 0
 
     def __str__(self):
         to_maximize = "max" if self.to_maximize else "min"
@@ -147,12 +149,15 @@ class Simplex:
         if not self.to_maximize:
             self.C = -self.C
         while True:
+            # X_B row b...
+            # C_B row c
+
             # Step 1
             self._compute_basic_solution()
-
             # Step 2
             entering_j, min_delta, cnt = self._estimate_delta_row()
             optimal, solution = self._check_solution_for_optimality(cnt)
+            self.show_table()
             if optimal:
                 return solution
 
@@ -161,6 +166,20 @@ class Simplex:
 
             # Step 4
             self._update_basis(entering_j, leaving_i, P_j)
+            self.iteration += 1
+
+    def show_table(self):
+        print(f'Iteration #{self.iteration}')
+        data = [[round(list(self.C_B)[row], self.eps), f'x_{self.basic[row] + 1}', round(list(self.X_B)[row], self.eps),
+                 *[round(el, self.eps) for el in list(np.linalg.inv(self.B))[row]]] for row in
+                range(self.m)] + [[' ', 'delta', round(self.delta, self.eps)] + self.z_row[self.m:]]
+
+        view = tt.to_string(
+            data,
+            header=['c', 'basic', 'b'] + [f'A{i + 1}' for i in range(self.m)],
+            style=tt.styles.rounded_thick
+        )
+        print(view)
 
     def _compute_basic_solution(self):
         """
@@ -198,14 +217,14 @@ class Simplex:
         entering_var = 0
         min_delta = float("inf")
         positive_delta_count = 0
-
+        self.z_row.clear()
         for column in range(self.n):
-            if column in self.basic:
-                continue
-
             P_j = self.A[:, [column]]
             z_j = self.C_B_mul_B_inv @ P_j
             delta = z_j.item() - self.C[column]
+            self.z_row.append(round(delta, self.eps))
+            if column in self.basic:
+                continue
 
             if delta >= self.epsilon:
                 positive_delta_count += 1
@@ -276,11 +295,12 @@ class Simplex:
         SimplexSolution
             solution if the solution is optimal, None otherwise
         """
+        x_decision = np.zeros(self.n - self.m)
+        for i, j in enumerate(self.basic):
+            if j < self.n - self.m:
+                x_decision[j] = round(self.X_B[i], self.eps)
+        self.delta = SimplexSolution(x_decision, round(self.z, self.eps)).opt
         if count == self.n - self.m:
-            x_decision = np.zeros(self.n - self.m)
-            for i, j in enumerate(self.basic):
-                if j < self.n - self.m:
-                    x_decision[j] = round(self.X_B[i], self.eps)
             return True, SimplexSolution(x_decision, round(self.z, self.eps))
         else:
             return False, None
@@ -313,7 +333,7 @@ class Simplex:
 if __name__ == "__main__":
     from input_parser import parse_file
 
-    simplex = Simplex(*parse_file("inputs/input1.txt"))
+    simplex = Simplex(*parse_file("inputs/input3.txt"))
     np.set_printoptions(precision=simplex.eps)
     print(simplex)
     try:
