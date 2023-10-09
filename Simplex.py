@@ -149,9 +149,6 @@ class Simplex:
         if not self.to_maximize:
             self.C = -self.C
         while True:
-            # X_B row b...
-            # C_B row c
-
             # Step 1
             self._compute_basic_solution()
             # Step 2
@@ -172,7 +169,7 @@ class Simplex:
         print(f'Iteration #{self.iteration}')
         data = [[round(list(self.C_B)[row], self.eps), f'x_{self.basic[row] + 1}', round(list(self.X_B)[row], self.eps),
                  *[round(el, self.eps) for el in list(np.linalg.inv(self.B))[row]]] for row in
-                range(self.m)] + [[' ', 'delta', round(self.delta, self.eps)] + self.z_row[self.m:]]
+                range(self.m)] + [[' ', 'delta', round(self.delta, self.eps)] + self.z_row[len(self.function):]]
 
         view = tt.to_string(
             data,
@@ -232,7 +229,6 @@ class Simplex:
                 if delta < min_delta - self.epsilon:
                     min_delta = delta
                     entering_var = column
-
         return entering_var, min_delta, positive_delta_count
 
     def _estimate_ratio_col(self, entering_j):
@@ -333,7 +329,7 @@ class Simplex:
 if __name__ == "__main__":
     from input_parser import parse_file
 
-    simplex = Simplex(*parse_file("inputs/input3.txt"))
+    simplex = Simplex(*parse_file("inputs/input1.txt"))
     np.set_printoptions(precision=simplex.eps)
     print(simplex)
     try:
