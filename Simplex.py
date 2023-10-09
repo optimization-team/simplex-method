@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 import numpy as np
 import termtables as tt
 from Function import Function
