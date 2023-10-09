@@ -70,17 +70,12 @@ class TestSimplex:
     test_cases = [os.path.join("tests", file) for file in tests]
 
     @pytest.mark.parametrize("test_file", test_cases)
-    def test_simplex(self, test_file):
+    def test_simplex(self, test_file: str) -> None:
         """
         Parameters
         ----------
         test_file : str
             path to test file
-
-        Returns
-        -------
-        None
-
         """
 
         testcase = SimplexTestCase(*parse_test(test_file))

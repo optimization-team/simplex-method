@@ -22,8 +22,6 @@ class Function:
     __call__(*args, vector) -> float | int:
         Takes as an argument list of values (vector) or a sequence of numbers, not both.
         Then returns a dot product of coefficients and a given data.
-
-        To more information see examples.
     """
 
     def __init__(self, *args, coefficients: list[int | float] = None):
