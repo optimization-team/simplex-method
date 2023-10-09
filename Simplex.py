@@ -136,7 +136,7 @@ class Simplex:
         approximation = f"Approximation: {self.eps}"
         return f"LPP:\n{self.function} -> {to_maximize}\n{constraints}\n{approximation}\n"
 
-    def optimise(self) -> SimplexSolution:
+    def optimise(self, print_iterations=False) -> SimplexSolution:
         """
         Optimise the given function with given constraints.
         Main function of the Simplex class.
@@ -157,7 +157,9 @@ class Simplex:
             # Step 2
             entering_j, min_delta, cnt = self._estimate_delta_row()
             optimal, solution = self._check_solution_for_optimality(cnt)
-            self.show_table()
+
+            if print_iterations:
+                self.show_table()
             if optimal:
                 return solution
 
