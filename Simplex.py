@@ -200,10 +200,9 @@ class Simplex:
 
             if delta >= self.epsilon:
                 positive_delta_count += 1
-            else:
-                if delta < min_delta - self.epsilon:
-                    min_delta = delta
-                    entering_var = column
+            elif delta < min_delta - self.epsilon:
+                min_delta = delta
+                entering_var = column
 
         return entering_var, min_delta, positive_delta_count
 
@@ -273,8 +272,7 @@ class Simplex:
                 if j < self.n - self.m:
                     x_decision[j] = round(self.X_B[i], self.eps)
             return True, SimplexSolution(x_decision, round(self.z, self.eps))
-        else:
-            return False, None
+        return False, None
 
     def _update_basis(self, entering_j, leaving_i, P_j) -> None:
         """
