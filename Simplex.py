@@ -28,10 +28,6 @@ class SimplexSolution:
 
 
 class InfeasibleSolution(Exception):
-    """
-    Exception for infeasible case
-    """
-
     def __init__(self):
         super().__init__("Infeasible solution, method is not applicable!")
 
@@ -45,10 +41,8 @@ class Simplex:
         Initial variables:
         ------------------
         function: Function
-            initial function
 
         constraints_matrix: np.array
-            initial matrix of constraints
 
         C: np.array
             function with slack variables
@@ -183,21 +177,18 @@ class Simplex:
         )
         print(view)
 
-    def _compute_basic_solution(self):
+    def _compute_basic_solution(self) -> None:
         """
         Compute basic solution at current iteration.
         Helper function for the optimise method.
         See Also:
             optimise
-        Returns
-        -------
-        None
         """
         self.X_B = np.linalg.inv(self.B) @ self.b
         self.z = self.C_B @ self.X_B
         self.C_B_mul_B_inv = self.C_B @ np.linalg.inv(self.B)
 
-    def _estimate_delta_row(self):
+    def _estimate_delta_row(self) -> tuple:
         """
         Estimate delta row at current iteration.
         Finds the entering variable.
@@ -230,10 +221,9 @@ class Simplex:
 
             if delta >= self.epsilon:
                 positive_delta_count += 1
-            else:
-                if delta < min_delta - self.epsilon:
-                    min_delta = delta
-                    entering_var = column
+            elif delta < min_delta - self.epsilon:
+                min_delta = delta
+                entering_var = column
 
         return entering_var, min_delta, positive_delta_count
 
@@ -278,7 +268,7 @@ class Simplex:
             i += 1
         return leaving_var, min_ratio, P_j
 
-    def _check_solution_for_optimality(self, count):
+    def _check_solution_for_optimality(self, count) -> tuple[bool, object]:
         """
         Check if the solution is optimal.
         Helper function for the optimise method.
@@ -304,10 +294,9 @@ class Simplex:
         self.delta = SimplexSolution(x_decision, round(self.z, self.eps)).opt
         if count == self.n - self.m:
             return True, SimplexSolution(x_decision, round(self.z, self.eps))
-        else:
-            return False, None
+        return False, None
 
-    def _update_basis(self, entering_j, leaving_i, P_j):
+    def _update_basis(self, entering_j, leaving_i, P_j) -> None:
         """
         Update basis at current iteration.
         Helper function for the optimise method.
@@ -318,11 +307,6 @@ class Simplex:
         entering_j
         leaving_i
         P_j
-
-        Returns
-        -------
-        None
-
         """
         for i in range(self.m):
             if self.basic[i] == leaving_i:

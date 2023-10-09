@@ -33,7 +33,7 @@ def parse_file(filename: str):
         return function, m, b, approximation
 
 
-def parse_test(filename: str):
+def parse_test(filename: str) -> tuple:
     """
     Parse test file with optimal value and optimal vector
 
