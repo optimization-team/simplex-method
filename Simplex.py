@@ -333,7 +333,7 @@ class Simplex:
 if __name__ == "__main__":
     from input_parser import parse_file
 
-    simplex = Simplex(*parse_file("inputs/input3.txt"))
+    simplex = Simplex(*parse_file("inputs/input1.txt"))
     np.set_printoptions(precision=simplex.eps)
     print(simplex)
     try:
