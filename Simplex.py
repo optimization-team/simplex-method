@@ -31,6 +31,12 @@ class InfeasibleSolution(Exception):
         super().__init__("Infeasible solution, method is not applicable!")
 
 
+class AlternatingOptima(Exception):
+    def __init__(self, solution):
+        super().__init__("Alternating optima detected!")
+        self.solution = solution
+
+
 class Simplex:
     """
     Main simplex class made for calculating the optimal value of input vector for a given function and constraints.
@@ -129,7 +135,7 @@ class Simplex:
         approximation = f"Approximation: {self.eps}"
         return f"LPP:\n{self.function} -> {to_maximize}\n{constraints}\n{approximation}\n"
 
-    def optimise(self, print_iterations=False) -> SimplexSolution:
+    def optimise(self, print_iterations=False) -> SimplexSolution | tuple[SimplexSolution, str]:
         """
         Optimise the given function with given constraints.
         Main function of the Simplex class.
@@ -141,10 +147,9 @@ class Simplex:
         """
         if not self.to_maximize:
             self.C = -self.C
-        while True:
-            # X_B row b...
-            # C_B row c
 
+        prev_z = None
+        while True:
             # Step 1
             self._compute_basic_solution()
             # Step 2
@@ -153,6 +158,12 @@ class Simplex:
 
             if print_iterations:
                 self.show_table()
+
+            if prev_z is not None and round(self.z, self.eps) == round(prev_z, self.eps):
+                # Indicating alternating optima
+                raise AlternatingOptima(solution)
+
+            prev_z = self.z
             if optimal:
                 return solution
 
@@ -293,7 +304,7 @@ class Simplex:
         self.delta = SimplexSolution(x_decision, round(self.z, self.eps)).opt
         if count == self.n - self.m:
             return True, SimplexSolution(x_decision, round(self.z, self.eps))
-        return False, None
+        return False, SimplexSolution(x_decision, round(self.z, self.eps))
 
     def _update_basis(self, entering_j, leaving_i, P_j) -> None:
         """
@@ -314,6 +325,30 @@ class Simplex:
                 self.C_B[i] = self.C[entering_j]
                 break
 
+    def _check_for_alternating_optima(self, delta_row) -> bool:
+        """
+        Check for alternating optima based on delta row.
+        Helper function for the optimise method.
+        See Also:
+            optimise
+        Parameters
+        ----------
+        delta_row: list
+            List of delta values for each variable
+
+        Returns
+        -------
+        bool
+            True if alternating optima are detected, False otherwise
+        """
+        # Count the number of positive delta values
+        num_positive_deltas = sum(1 for delta in delta_row if delta >= self.epsilon)
+
+        # If there is more than one positive delta, it indicates alternating optima
+        if num_positive_deltas > 1:
+            return True
+        return False
+
 
 if __name__ == "__main__":
     from input_parser import parse_file
@@ -326,3 +361,6 @@ if __name__ == "__main__":
         print(solution)
     except InfeasibleSolution:
         print("SOLUTION:\nThe method is not applicable!")
+    except AlternatingOptima as e:
+        print(e.solution)
+        print("Alternating optima detected")

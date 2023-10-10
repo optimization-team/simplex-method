@@ -1,6 +1,6 @@
 import numpy as np
 from Function import Function
-from Simplex import Simplex, InfeasibleSolution
+from Simplex import Simplex, InfeasibleSolution, AlternatingOptima
 from input_parser import parse_file
 
 
@@ -54,6 +54,9 @@ def run_simplex(C, A, b, eps, max_min, print_steps) -> None:
         print(solution)
     except InfeasibleSolution:
         print("SOLUTION:\nThe method is not applicable!")
+    except AlternatingOptima as e:
+        print("Alternating optima detected!\nOne of the solutions is:")
+        print(e.solution)
 
 
 if __name__ == "__main__":
