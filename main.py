@@ -59,26 +59,50 @@ def run_simplex(C, A, b, eps, max_min, print_steps) -> None:
         print(e.solution)
 
 
-if __name__ == "__main__":
-    print("Do you want to input from the console or from a file? (console/file)")
-    choice = input().strip().lower()
+def get_user_choice(prompt, options):
+    while True:
+        user_input = input(prompt).strip().lower()
+        if user_input in options:
+            return user_input
+        print("Invalid choice. Please try again.")
 
-    print("Do you want to maximize or minimize? (max/min)")
-    max_min = input().strip().lower()
 
-    print("Should the iteration steps be printed? (y/n)")
-    print_steps = input().strip().lower() == "y"
+def get_user_choice(options):
+    while True:
+        user_input = input().strip().lower()
+        if user_input in options:
+            return user_input
+        print("Invalid choice. Please try again.")
 
-    if choice == "console":
+
+def get_boolean_input():
+    return input().strip().lower() == "y"
+
+
+def main():
+    print("Console or file? (console/file)")
+    input_choice = get_user_choice(["console", "file"])
+
+    print("Maximize or minimize? (max/min)")
+    optimization_choice = get_user_choice(["max", "min"])
+
+    print("Print iteration steps? (y/n)")
+    print_steps = get_boolean_input()
+
+    if input_choice == "console":
         print("Enter input from console")
         C, A, b, eps = read_input_from_console()
-        run_simplex(C, A, b, eps, max_min, print_steps)
-    elif choice == "file":
+        run_simplex(C, A, b, eps, optimization_choice, print_steps)
+    elif input_choice == "file":
         print("Enter the name of the input file from the \"inputs\" folder (e.g., 'input1.txt'):")
         input_file = None
         while input_file is None:
             input_file = read_input_from_file(input().strip())
         C, A, b, eps = input_file
-        run_simplex(C, A, b, eps, max_min, print_steps)
-    else:
-        print("Invalid choice. Please choose 'console' or 'file'.")
+        run_simplex(C, A, b, eps, optimization_choice, print_steps)
+
+
+if __name__ == "__main__":
+    main()
+
+
