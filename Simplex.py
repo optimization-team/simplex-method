@@ -135,7 +135,7 @@ class Simplex:
         approximation = f"Approximation: {self.eps}"
         return f"LPP:\n{self.function} -> {to_maximize}\n{constraints}\n{approximation}\n"
 
-    def optimise(self, print_iterations=False) -> SimplexSolution:
+    def optimise(self, print_iterations) -> SimplexSolution:
         """
         Optimise the given function with given constraints.
         Main function of the Simplex class.
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     np.set_printoptions(precision=simplex.eps)
     print(simplex)
     try:
-        solution = simplex.optimise()
+        solution = simplex.optimise(print_iterations=True)
         print(solution)
     except InfeasibleSolution:
         print("SOLUTION:\nThe method is not applicable!")
