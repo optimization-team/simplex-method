@@ -150,6 +150,9 @@ class Simplex:
 
         prev_z = None
         while True:
+            # X_B row b...
+            # C_B row c
+
             # Step 1
             self._compute_basic_solution()
             # Step 2
@@ -177,7 +180,7 @@ class Simplex:
         print(f'Iteration #{self.iteration}')
         data = [[round(list(self.C_B)[row], self.eps), f'x_{self.basic[row] + 1}', round(list(self.X_B)[row], self.eps),
                  *[round(el, self.eps) for el in list(np.linalg.inv(self.B))[row]]] for row in
-                range(self.m)] + [[' ', 'delta', round(self.delta, self.eps)] + self.z_row[self.m:]]
+                range(self.m)] + [[' ', 'delta', round(self.delta, self.eps)] + self.z_row[len(self.function):]]
 
         view = tt.to_string(
             data,
