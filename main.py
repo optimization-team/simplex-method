@@ -59,14 +59,6 @@ def run_simplex(C, A, b, eps, max_min, print_steps) -> None:
         print(e.solution)
 
 
-def get_user_choice(prompt, options):
-    while True:
-        user_input = input(prompt).strip().lower()
-        if user_input in options:
-            return user_input
-        print("Invalid choice. Please try again.")
-
-
 def get_user_choice(options):
     while True:
         user_input = input().strip().lower()
